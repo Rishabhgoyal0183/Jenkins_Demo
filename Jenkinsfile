@@ -1,18 +1,18 @@
 pipeline {
-    agent { label 'ec2-agent' }
+    agent any
 
-    options {
+options {
         skipDefaultCheckout(true)
     }
+
     stages {
 
          stage('Checkout') {
-                steps {
-                     git credentialsId: 'github-classic-token',
-                         url: 'https://github.com/Rishabhgoyal0183/testApplication.git',
-                         branch: 'master'
-                }
-         }
+                     steps {
+                         checkout scm
+                     }
+          }
+
          stage('Compile') {
              steps {
                  sh 'mvn clean compile'
@@ -31,21 +31,21 @@ pipeline {
          }
 
 
-        stage('SonarQube Analysis') {
-
-            steps {
-                withSonarQubeEnv('sonarqube-server') {
-                    sh """
-                    mvn clean verify sonar:sonar \
-                      -DskipTests \
-                      -Dsonar.projectKey=testApplication \
-                      -Dsonar.projectName=testApplication \
-                      -Dsonar.host.url=$SONAR_HOST_URL \
-                      -Dsonar.token=$SONAR_AUTH_TOKEN
-                    """
-                }
-            }
-        }
+//        stage('SonarQube Analysis') {
+//
+//            steps {
+//                withSonarQubeEnv('sonarqube-server') {
+//                    sh """
+//                    mvn clean verify sonar:sonar \
+//                      -DskipTests \
+//                      -Dsonar.projectKey=testApplication \
+//                      -Dsonar.projectName=testApplication \
+//                      -Dsonar.host.url=$SONAR_HOST_URL \
+//                      -Dsonar.token=$SONAR_AUTH_TOKEN
+//                    """
+//                }
+//            }
+//        }
 
         stage('Build') {
             steps {
@@ -61,12 +61,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                    if [ "$BRANCH_NAME" = "master" ]; then
+                    if [ "$BRANCH_NAME" = "main" ]; then
                         PORT=8081
-                    elif [ "$BRANCH_NAME" = "Dev" ]; then
+                    elif [ "$BRANCH_NAME" = "master" ]; then
                         PORT=8082
-                    elif [ "$BRANCH_NAME" = "UAT" ]; then
-                        PORT=8083
                     fi
 
                     # Kill existing process on the port
@@ -89,8 +87,8 @@ pipeline {
                     echo "JAR: $JAR_FILE"
 
                     export JENKINS_NODE_COOKIE=dontKillMe
-                    nohup java -javaagent:/opt/jmx_prometheus_javaagent-1.1.0.jar=8080:/opt/jmx-config.yaml -jar $JAR_FILE --server.port=$PORT > $WORKSPACE/app.log 2>&1 &
-
+//                    nohup java -javaagent:/opt/jmx_prometheus_javaagent-1.1.0.jar=8080:/opt/jmx-config.yaml -jar $JAR_FILE --server.port=$PORT > $WORKSPACE/app.log 2>&1 &
+                    nohup java -jar $JAR_FILE --server.port=$PORT > $WORKSPACE/app.log 2>&1 &
                     echo "App started with PID $!"
                     echo "Logs: $WORKSPACE/app.log"
                 '''
