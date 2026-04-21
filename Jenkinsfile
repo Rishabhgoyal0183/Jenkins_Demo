@@ -66,6 +66,7 @@ options {
                     elif [ "$BRANCH_NAME" = "master" ]; then
                         PORT=8082
                     fi
+                    echo "Selected port $PORT for branch $BRANCH_NAME"
 
                     # Kill existing process on the port
                     PID=$(lsof -t -i:$PORT || true)
