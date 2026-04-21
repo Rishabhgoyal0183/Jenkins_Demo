@@ -63,7 +63,7 @@ options {
                 sh '''
                     if [ "$BRANCH_NAME" = "main" ]; then
                         PORT=8081
-                    elif [ "$BRANCH_NAME" = "master" ]; then
+                    elif [ "$BRANCH_NAME" = "develop" ]; then
                         PORT=8082
                     fi
                     echo "Selected port $PORT for branch $BRANCH_NAME"
