@@ -19,17 +19,27 @@ options {
              }
          }
 
-         stage('Run Unit Tests') {
-             steps {
-                 sh 'mvn test'
-             }
-             post {
-                 always {
-                     junit '**/target/surefire-reports/*.xml'
-                 }
-             }
-         }
-
+        stage('Run Unit Tests') {
+            steps {
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit testResults: '**/target/surefire-reports/*.xml',
+                          allowEmptyResults: false
+                }
+                failure {
+                    echo 'Tests FAILED — stopping pipeline!'
+                    mail to: 'awstesting0183@gmail.com',
+                         subject: "TESTS FAILED — ${env.JOB_NAME} [${env.BRANCH_NAME}]",
+                         body: """
+                            Test stage failed on branch: ${env.BRANCH_NAME}
+                            Build Number: ${env.BUILD_NUMBER}
+                            Check details: ${env.BUILD_URL}
+                         """
+                }
+            }
+        }
 
 //        stage('SonarQube Analysis') {
 //
