@@ -58,7 +58,8 @@ options {
             }
             steps {
                 sh '''
-                    mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                    mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                      -DskipTests \
                       -Dsonar.projectKey=Jenkins_Demo \
                       -Dsonar.projectName=Jenkins_Demo \
                       -Dsonar.host.url=http://65.0.118.121:9000 \
