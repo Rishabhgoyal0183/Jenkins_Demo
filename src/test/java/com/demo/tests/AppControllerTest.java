@@ -41,14 +41,13 @@ public class AppControllerTest {
                 .andExpect(jsonPath("$.echoed_at").exists());
     }
 
-    @Test
-    void thisTestWillFail() throws Exception {
-        // This is intentionally wrong
-        // /api/ping returns "UP" but we are asserting "DOWN"
-        // This will FAIL and trigger the email
-        mockMvc.perform(get("/api/ping"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DOWN")); // ← wrong value on purpose
-    }
-
+//    @Test
+//    void thisTestWillFail() throws Exception {
+//        // This is intentionally wrong
+//        // /api/ping returns "UP" but we are asserting "DOWN"
+//        // This will FAIL and trigger the email
+//        mockMvc.perform(get("/api/ping"))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.status").value("DOWN")); // ← wrong value on purpose
+//    }
 }
