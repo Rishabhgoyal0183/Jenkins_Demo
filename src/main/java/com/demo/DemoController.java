@@ -5,19 +5,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api")
 @Slf4j
 public class DemoController {
 
-    Logger logger = Logger.getLogger(DemoController.class.getName());
-
     @GetMapping("/ping")
     public Map<String, String> ping() {
-        logger.log(Level.INFO, "Received /ping request");
+        log.info("Received /ping request");
         return Map.of(
                 "status",    "UP",
                 "message",   "Jenkins Demo App is running!",
@@ -27,6 +23,7 @@ public class DemoController {
 
     @GetMapping("/greet/{name}")
     public Map<String, String> greet(@PathVariable String name) {
+        log.info("Received /greet request for name: {}", name);
         return Map.of(
                 "message", "Hello, " + name + "! Deployed via Jenkins CI/CD."
         );
