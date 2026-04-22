@@ -41,22 +41,6 @@ options {
             }
         }
 
-//        stage('SonarQube Analysis') {
-//
-//            steps {
-//                withSonarQubeEnv('sonarqube-server') {
-//                    sh """
-//                    mvn clean verify sonar:sonar \
-//                      -DskipTests \
-//                      -Dsonar.projectKey=testApplication \
-//                      -Dsonar.projectName=testApplication \
-//                      -Dsonar.host.url=$SONAR_HOST_URL \
-//                      -Dsonar.token=$SONAR_AUTH_TOKEN
-//                    """
-//                }
-//            }
-//        }
-
         stage('Build') {
             steps {
                 sh '''
@@ -64,6 +48,21 @@ options {
                     echo "Workspace: $WORKSPACE"
                     cd $WORKSPACE
                     mvn package -DskipTests
+                '''
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonarqube_token')
+            }
+            steps {
+                sh '''
+                    mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                      -Dsonar.projectKey=Jenkins_Demo \
+                      -Dsonar.projectName=Jenkins_Demo \
+                      -Dsonar.host.url=http://65.0.118.121:9000 \
+                      -Dsonar.login=$SONAR_TOKEN
                 '''
             }
         }
