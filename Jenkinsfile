@@ -95,39 +95,6 @@ pipeline {
 //        }
 
         // ─────────────────────────────────────────────
-        // STAGING ONLY — Save tested JAR to protected folder
-        // This is the handoff point between staging → main
-        // ─────────────────────────────────────────────
-
-        stage('Save JAR to Protected Folder') {
-            when {
-                branch 'staging'
-            }
-            steps {
-                sh '''
-                    JAR_FILE=$(find $WORKSPACE/target -name "*.jar" ! -name "*sources*" | head -1)
-
-                    if [ -z "$JAR_FILE" ]; then
-                        echo "ERROR: No JAR found in $WORKSPACE/target — cannot save to protected folder"
-                        exit 1
-                    fi
-
-                    # Ensure the protected folder exists
-                    mkdir -p $PROTECTED_JAR_DIR
-
-                    # Clear old JARs so main always picks the latest one
-                    rm -f $PROTECTED_JAR_DIR/*.jar
-
-                    echo "Saving JAR to protected folder: $PROTECTED_JAR_DIR"
-                    cp "$JAR_FILE" "$PROTECTED_JAR_DIR/"
-
-                    echo "JAR saved successfully:"
-                    ls -lh $PROTECTED_JAR_DIR/
-                '''
-            }
-        }
-
-        // ─────────────────────────────────────────────
         // APPROVAL — staging needs staging_user
         //            main needs main_user
         //            develop skips this entirely
@@ -161,6 +128,40 @@ pipeline {
                 }
             }
         }
+
+        // ─────────────────────────────────────────────
+        // STAGING ONLY — Save tested JAR to protected folder
+        // This is the handoff point between staging → main
+        // ─────────────────────────────────────────────
+
+        stage('Save JAR to Protected Folder') {
+            when {
+                branch 'staging'
+            }
+            steps {
+                sh '''
+                    JAR_FILE=$(find $WORKSPACE/target -name "*.jar" ! -name "*sources*" | head -1)
+
+                    if [ -z "$JAR_FILE" ]; then
+                        echo "ERROR: No JAR found in $WORKSPACE/target — cannot save to protected folder"
+                        exit 1
+                    fi
+
+                    # Ensure the protected folder exists
+                    mkdir -p $PROTECTED_JAR_DIR
+
+                    # Clear old JARs so main always picks the latest one
+                    rm -f $PROTECTED_JAR_DIR/*.jar
+
+                    echo "Saving JAR to protected folder: $PROTECTED_JAR_DIR"
+                    cp "$JAR_FILE" "$PROTECTED_JAR_DIR/"
+
+                    echo "JAR saved successfully:"
+                    ls -lh $PROTECTED_JAR_DIR/
+                '''
+            }
+        }
+
 
         // ─────────────────────────────────────────────
         // DEPLOY — all three branches land here
