@@ -1,14 +1,15 @@
 pipeline {
-    agent any
+    agent { label 'jenkins_node' }
 
     options {
         skipDefaultCheckout(true)
     }
 
     environment {
-        // Central protected folder where staging saves its JAR
-        // main branch picks it up from here
-        PROTECTED_JAR_DIR = '/opt/protected-builds/staging'
+       JAVA_HOME  = '/usr/local/jdk-21'
+       MAVEN_HOME = '/usr/local/maven'
+       PATH       = "/usr/local/jdk-21/bin:/usr/local/maven/bin:${env.PATH}"
+       PROTECTED_JAR_DIR = '/opt/protected-builds/staging'
     }
 
     stages {
