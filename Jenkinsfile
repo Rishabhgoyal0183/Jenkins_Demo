@@ -83,13 +83,15 @@ pipeline {
                 SONAR_TOKEN = credentials('sonarqube_token')
             }
             steps {
+            withSonarQubeEnv('SonarQube') {
                 sh '''
-                    /usr/local/maven/bin/mvn clean verify sonar:sonar \
-                      -Dsonar.projectKey=DemoApplication \
-                      -Dsonar.projectName='DemoApplication' \
-                      -Dsonar.host.url=http://13.233.80.9:9000 \
-                      -Dsonar.token=$SONAR_TOKEN
-                '''
+                   /usr/local/maven/bin/mvn clean verify sonar:sonar \
+                     -DskipTests \
+                     -Dsonar.projectKey=DemoApplication \
+                     -Dsonar.projectName='DemoApplication' \
+                     -Dsonar.host.url=http://13.233.80.9:9000 \
+                     -Dsonar.token=$SONAR_TOKEN
+                   '''
             }
         }
 
