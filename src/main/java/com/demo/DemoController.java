@@ -9,6 +9,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @Slf4j
+@CrossOrigin(origins = "*")
 public class DemoController {
 
     @GetMapping("/ping")

@@ -3,807 +3,892 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Jenkins Demo — API Playground</title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <title>Jenkins CI/CD — Spring Boot DevOps POC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg:        #07080c;
-          --surface:   #0e1118;
-          --surface2:  #141720;
-          --border:    #1c2030;
-          --border2:   #252b3d;
-          --orange:    #f97316;
-          --blue:      #3b82f6;
-          --green:     #10b981;
-          --red:       #ef4444;
-          --yellow:    #f59e0b;
-          --text:      #e2e8f0;
-          --muted:     #4b5563;
-          --muted2:    #6b7280;
-          --mono:      'IBM Plex Mono', monospace;
-          --sans:      'Space Grotesk', sans-serif;
-          --radius:    12px;
+          --bg:       #080b10;
+          --bg2:      #0c1018;
+          --surface:  #0f1520;
+          --surface2: #141d2e;
+          --border:   #1a2540;
+          --border2:  #243050;
+          --orange:   #f97316;
+          --green:    #22c55e;
+          --blue:     #38bdf8;
+          --purple:   #a78bfa;
+          --yellow:   #fbbf24;
+          --red:      #f87171;
+          --text:     #e2e8f0;
+          --muted:    #64748b;
+          --muted2:   #94a3b8;
+          --mono:     'JetBrains Mono', monospace;
+          --head:     'Syne', sans-serif;
+          --r:        12px;
         }
 
+        html { scroll-behavior: smooth; }
         body {
-          background: var(--bg);
-          color: var(--text);
-          font-family: var(--sans);
-          min-height: 100vh;
+          background: var(--bg); color: var(--text);
+          font-family: var(--head); line-height: 1.6;
+          overflow-x: hidden;
+        }
+        body::before {
+          content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+          background-image:
+            linear-gradient(rgba(56,189,248,.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(56,189,248,.025) 1px, transparent 1px);
+          background-size: 40px 40px;
         }
 
-        /* subtle scanline texture */
-        body::after {
-          content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0,0,0,.08) 2px,
-            rgba(0,0,0,.08) 4px
-          );
+        /* ── NAV ─────────────────────────────────────────────────── */
+        nav {
+          position:fixed; top:0; left:0; right:0; z-index:100;
+          background:rgba(8,11,16,.88); backdrop-filter:blur(16px);
+          border-bottom:1px solid var(--border);
+          padding:0 5vw; height:60px;
+          display:flex; align-items:center; justify-content:space-between; gap:16px;
         }
-
-        /* ── HEADER ── */
-        header {
-          position:relative; z-index:10;
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          padding: 0 32px;
-          display: flex; align-items: center; justify-content: space-between;
-          height: 64px;
-          gap: 16px;
-        }
-
-        .logo {
+        .nav-brand {
           display:flex; align-items:center; gap:10px;
-          flex-shrink: 0;
+          font-family:var(--mono); font-size:.8rem; font-weight:600;
+          color:var(--text); text-decoration:none; flex-shrink:0;
         }
-        .logo-glyph {
-          width:34px; height:34px;
-          background: var(--orange);
-          border-radius:8px;
-          display:flex; align-items:center; justify-content:center;
-          font-size:16px;
+        .nav-icon {
+          width:30px; height:30px; background:var(--orange);
+          border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:14px;
         }
-        .logo h1 {
-          font-size:.95rem; font-weight:700; letter-spacing:-.02em;
-          white-space: nowrap;
+        .nav-links { display:flex; gap:2px; list-style:none; }
+        .nav-links a {
+          color:var(--muted2); text-decoration:none;
+          font-family:var(--mono); font-size:.7rem;
+          padding:6px 12px; border-radius:6px; transition:all .2s;
         }
-        .logo h1 sub {
-          font-family: var(--mono); font-size:.6rem;
-          color: var(--muted2); display:block;
-          font-weight:400; letter-spacing:.04em;
+        .nav-links a:hover { color:var(--text); background:var(--surface); }
+        .nav-badge {
+          display:flex; align-items:center; gap:7px;
+          font-family:var(--mono); font-size:.68rem; color:var(--muted);
+          flex-shrink:0;
         }
+        .ndot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 7px var(--green); animation:blink 2.5s ease infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-        /* BASE URL configurator */
-        .url-bar {
-          display:flex; align-items:center; gap:8px;
-          background: var(--bg);
-          border: 1px solid var(--border2);
-          border-radius: 8px;
-          padding: 5px 10px 5px 12px;
-          flex: 1; max-width: 480px;
-        }
-        .url-bar label {
-          font-family: var(--mono); font-size:.65rem;
-          color: var(--muted2); white-space:nowrap;
-          letter-spacing:.06em; text-transform:uppercase;
-        }
-        .url-bar input {
-          flex:1; background:transparent; border:none; outline:none;
-          color: var(--orange); font-family: var(--mono); font-size:.8rem;
-          min-width:0;
-        }
-        .url-bar input::placeholder { color: var(--muted); }
-        #save-url-btn {
-          background: var(--border2); border:none; border-radius:5px;
-          color: var(--text); font-family: var(--mono); font-size:.65rem;
-          padding: 4px 9px; cursor:pointer;
-          transition: background .15s;
-          white-space:nowrap;
-        }
-        #save-url-btn:hover { background: var(--orange); }
-        #save-url-btn.saved { background: var(--green); color:#fff; }
-
-        .conn-dot {
-          width:8px; height:8px; border-radius:50%;
-          background: var(--muted); flex-shrink:0;
-          transition: background .3s;
-        }
-        .conn-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2.5s ease-in-out infinite; }
-        .conn-dot.offline { background: var(--red);   box-shadow: 0 0 6px var(--red); }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-        /* ── LAYOUT ── */
-        .layout {
+        /* ── HERO ────────────────────────────────────────────────── */
+        .hero {
           position:relative; z-index:1;
-          display:grid;
-          grid-template-columns: 260px 1fr;
-          min-height: calc(100vh - 64px);
+          padding:110px 5vw 80px;
+          display:grid; grid-template-columns:1fr auto;
+          align-items:center; gap:48px;
+          min-height:100vh;
         }
+        .hero-eyebrow {
+          display:inline-flex; align-items:center; gap:8px;
+          font-family:var(--mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase;
+          color:var(--orange); background:rgba(249,115,22,.08); border:1px solid rgba(249,115,22,.22);
+          border-radius:100px; padding:5px 14px 5px 10px; margin-bottom:24px;
+          animation:up .6s ease both;
+        }
+        .hero-eyebrow::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--orange); box-shadow:0 0 6px var(--orange); animation:blink 1.8s infinite; }
+        .hero-title {
+          font-size:clamp(2.4rem,6vw,4.6rem); font-weight:800;
+          line-height:1.06; letter-spacing:-.03em; margin-bottom:22px;
+          animation:up .6s .1s ease both;
+        }
+        .hero-title .ac { color:var(--orange); }
+        .hero-title .dm { color:var(--muted); }
+        .hero-desc {
+          font-size:1rem; color:var(--muted2); font-weight:400;
+          max-width:540px; line-height:1.75; margin-bottom:36px;
+          animation:up .6s .2s ease both;
+        }
+        .hero-pills {
+          display:flex; flex-wrap:wrap; gap:8px; margin-bottom:40px;
+          animation:up .6s .3s ease both;
+        }
+        .pill {
+          display:flex; align-items:center; gap:6px;
+          font-family:var(--mono); font-size:.68rem; font-weight:500;
+          padding:5px 12px; border-radius:7px; border:1px solid;
+        }
+        .p-or { color:var(--orange); border-color:rgba(249,115,22,.28); background:rgba(249,115,22,.06); }
+        .p-bl { color:var(--blue);   border-color:rgba(56,189,248,.28);  background:rgba(56,189,248,.06); }
+        .p-gr { color:var(--green);  border-color:rgba(34,197,94,.28);   background:rgba(34,197,94,.06); }
+        .p-pu { color:var(--purple); border-color:rgba(167,139,250,.28); background:rgba(167,139,250,.06); }
+        .p-ye { color:var(--yellow); border-color:rgba(251,191,36,.28);  background:rgba(251,191,36,.06); }
+        .hero-btns { display:flex; gap:10px; flex-wrap:wrap; animation:up .6s .4s ease both; }
+        .btn-pr {
+          display:inline-flex; align-items:center; gap:7px;
+          background:var(--orange); color:#fff; border:none; border-radius:10px;
+          padding:12px 22px; font-family:var(--mono); font-size:.8rem; font-weight:600;
+          cursor:pointer; text-decoration:none; transition:background .2s, transform .15s, box-shadow .2s;
+        }
+        .btn-pr:hover { background:#ea6c0a; transform:translateY(-2px); box-shadow:0 8px 24px rgba(249,115,22,.28); }
+        .btn-se {
+          display:inline-flex; align-items:center; gap:7px;
+          background:transparent; color:var(--text); border:1px solid var(--border2); border-radius:10px;
+          padding:12px 22px; font-family:var(--mono); font-size:.8rem; font-weight:500;
+          cursor:pointer; text-decoration:none; transition:all .2s;
+        }
+        .btn-se:hover { border-color:var(--orange); color:var(--orange); }
 
-        /* ── SIDEBAR ── */
-        aside {
-          background: var(--surface);
-          border-right: 1px solid var(--border);
-          padding: 24px 0;
-          display:flex; flex-direction:column; gap:0;
+        /* Terminal card */
+        .term-card {
+          width:clamp(260px,30vw,420px); flex-shrink:0;
+          background:var(--surface); border:1px solid var(--border2); border-radius:14px;
+          overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
+          animation:left .8s .2s ease both;
         }
+        .term-bar {
+          background:var(--surface2); border-bottom:1px solid var(--border);
+          padding:10px 14px; display:flex; align-items:center; gap:7px;
+        }
+        .td { width:10px; height:10px; border-radius:50%; }
+        .td-r{background:#ef4444;} .td-y{background:#f59e0b;} .td-g{background:#22c55e;}
+        .term-ttl { font-family:var(--mono); font-size:.62rem; color:var(--muted); margin:0 auto; }
+        .term-body { padding:16px 18px; font-family:var(--mono); font-size:.72rem; line-height:2; color:var(--muted2); }
+        .tl { display:flex; gap:8px; }
+        .tp { color:var(--green); flex-shrink:0; }
+        .tc { color:var(--text); }
+        .to { color:var(--muted); padding-left:14px; }
+        .tok{ color:var(--green); }
+        .tor{ color:var(--orange); }
+        .tcursor { display:inline-block; width:7px; height:13px; background:var(--orange); vertical-align:middle; animation:cur .8s step-end infinite; margin-left:2px; }
+        @keyframes cur { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes up   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:none} }
+        @keyframes left { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:none} }
 
-        .sidebar-section {
-          padding: 0 20px 20px;
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 20px;
-        }
-        .sidebar-section:last-child { border-bottom:none; margin-bottom:0; }
+        /* ── SECTION BASE ─────────────────────────────────────────── */
+        section { position:relative; z-index:1; padding:90px 5vw; }
+        section:nth-child(even) { background:var(--bg2); }
+        .stag { font-family:var(--mono); font-size:.63rem; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); margin-bottom:10px; }
+        .stit { font-size:clamp(1.8rem,3.5vw,2.5rem); font-weight:800; letter-spacing:-.02em; margin-bottom:12px; }
+        .ssub { color:var(--muted2); font-size:.94rem; font-weight:400; max-width:530px; line-height:1.7; margin-bottom:52px; }
 
-        .sidebar-label {
-          font-family: var(--mono); font-size:.6rem;
-          letter-spacing:.14em; text-transform:uppercase;
-          color: var(--muted); margin-bottom:12px;
+        /* ── PIPELINE ─────────────────────────────────────────────── */
+        .pf-wrap {
+          display:flex; align-items:stretch; flex-wrap:wrap; gap:0; margin-bottom:36px;
         }
+        .pf-step {
+          flex:1; min-width:120px;
+          background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+          padding:20px 14px; display:flex; flex-direction:column; align-items:center;
+          text-align:center; gap:9px; position:relative; transition:border-color .2s;
+        }
+        .pf-step:hover { border-color:var(--border2); }
+        .pf-step.done   { border-color:rgba(34,197,94,.22); }
+        .pf-step.active { border-color:rgba(249,115,22,.35); box-shadow:0 0 20px rgba(249,115,22,.07); }
+        .pf-arr { display:flex; align-items:center; justify-content:center; width:32px; flex-shrink:0; color:var(--border2); font-size:.9rem; align-self:center; }
+        .pf-ico { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+        .pf-step.done  .pf-ico { background:rgba(34,197,94,.1); }
+        .pf-step.active .pf-ico{ background:rgba(249,115,22,.1); }
+        .pf-step.pend  .pf-ico { background:var(--surface2); }
+        .pf-name { font-size:.8rem; font-weight:700; }
+        .pf-step.done  .pf-name { color:var(--green); }
+        .pf-step.active .pf-name{ color:var(--orange); }
+        .pf-step.pend  .pf-name { color:var(--muted); }
+        .pf-cmd { font-family:var(--mono); font-size:.58rem; color:var(--muted); line-height:1.5; }
+        .pf-bge {
+          font-family:var(--mono); font-size:.56rem; font-weight:600;
+          padding:2px 7px; border-radius:4px;
+        }
+        .pf-step.done  .pf-bge { background:rgba(34,197,94,.13); color:var(--green); }
+        .pf-step.active .pf-bge{ background:rgba(249,115,22,.13); color:var(--orange); animation:blink 1.8s infinite; }
+        .pf-step.pend  .pf-bge { background:var(--surface2); color:var(--muted); }
 
-        /* Pipeline stages */
-        .pipeline { display:flex; flex-direction:column; gap:0; }
-        .stage {
-          display:flex; align-items:center; gap:10px;
-          padding: 10px 12px;
-          border-radius:8px;
-          position:relative;
-          cursor:default;
-        }
-        .stage::before {
-          content:'';
-          position:absolute; left:22px; top:100%;
-          width:2px; height:10px;
-          background: var(--border2);
-        }
-        .stage:last-child::before { display:none; }
-        .stage-bubble {
-          width:28px; height:28px; border-radius:50%;
-          display:flex; align-items:center; justify-content:center;
-          font-size:.7rem; flex-shrink:0;
-          border: 2px solid var(--border2);
-          font-family: var(--mono);
-        }
-        .stage.done .stage-bubble   { background:rgba(16,185,129,.15); border-color:var(--green); color:var(--green); }
-        .stage.active .stage-bubble { background:rgba(249,115,22,.15);  border-color:var(--orange); color:var(--orange); animation: stagePulse 1.8s ease-in-out infinite; }
-        .stage.pending .stage-bubble { background:transparent; color:var(--muted); }
-        @keyframes stagePulse {
-          0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.4)}
-          50%{box-shadow:0 0 0 6px rgba(249,115,22,0)}
-        }
-        .stage-info { flex:1; }
-        .stage-name { font-size:.82rem; font-weight:600; }
-        .stage.done .stage-name   { color:var(--green); }
-        .stage.active .stage-name { color:var(--orange); }
-        .stage.pending .stage-name{ color:var(--muted); }
-        .stage-sub {
-          font-family:var(--mono); font-size:.6rem; color:var(--muted);
-          margin-top:1px;
-        }
-        .stage-time { font-family:var(--mono); font-size:.62rem; color:var(--muted); }
+        .pd-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+        .pd-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px; transition:border-color .2s; }
+        .pd-card:hover { border-color:var(--border2); }
+        .pd-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .pd-ico { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+        .pd-ttl { font-size:.86rem; font-weight:700; }
+        .pd-sub { font-family:var(--mono); font-size:.6rem; color:var(--muted); margin-top:1px; }
+        .pd-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+        .pd-list li { display:flex; align-items:flex-start; gap:8px; font-family:var(--mono); font-size:.66rem; color:var(--muted2); line-height:1.5; }
+        .pd-list li::before { content:'›'; color:var(--orange); flex-shrink:0; }
 
-        /* App info tiles */
-        .info-list { display:flex; flex-direction:column; gap:8px; }
-        .info-row {
-          display:flex; align-items:center; justify-content:space-between;
-          padding:8px 12px;
-          background:var(--surface2);
-          border:1px solid var(--border);
-          border-radius:8px;
-        }
-        .info-row .k { font-family:var(--mono); font-size:.65rem; color:var(--muted); }
-        .info-row .v { font-size:.75rem; font-weight:600; color:var(--text); }
-        .info-row .v.accent { color:var(--orange); }
-        .info-row .v.blue   { color:var(--blue); }
+        /* ── MONITORING ───────────────────────────────────────────── */
+        .mon-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:16px; }
+        .mon-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:22px 18px; transition:all .25s; }
+        .mon-card:hover { border-color:var(--border2); transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.28); }
+        .mon-ico { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; }
+        .mon-ttl { font-size:.95rem; font-weight:700; margin-bottom:6px; }
+        .mon-dsc { font-family:var(--mono); font-size:.66rem; color:var(--muted2); line-height:1.6; }
+        .mon-flow { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0; margin-top:44px; }
+        .mfs { display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center; padding:0 10px; }
+        .mfs-ico { width:54px; height:54px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; border:1px solid var(--border2); }
+        .mfs-lbl { font-family:var(--mono); font-size:.66rem; font-weight:600; color:var(--text); }
+        .mfs-prt { font-family:var(--mono); font-size:.56rem; color:var(--muted); }
+        .marr { color:var(--border2); font-size:1.3rem; margin:0 4px; padding-bottom:20px; align-self:center; }
 
-        /* ── MAIN CONTENT ── */
-        main {
-          padding: 32px;
-          display:flex; flex-direction:column; gap:32px;
-          overflow-y:auto;
-        }
+        /* ── INFRASTRUCTURE ───────────────────────────────────────── */
+        .infra-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+        .infra-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:26px; transition:border-color .2s; }
+        .infra-card:hover { border-color:var(--border2); }
+        .infra-ttl { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+        .infra-sub { font-family:var(--mono); font-size:.65rem; color:var(--muted); margin-bottom:18px; }
+        .ikv { display:flex; flex-direction:column; gap:7px; }
+        .ikv-row { display:flex; justify-content:space-between; align-items:center; padding:7px 11px; background:var(--surface2); border:1px solid var(--border); border-radius:7px; }
+        .ikv-row .k { font-family:var(--mono); font-size:.62rem; color:var(--muted); }
+        .ikv-row .v { font-family:var(--mono); font-size:.7rem; font-weight:600; }
+        .vor{color:var(--orange);} .vbl{color:var(--blue);} .vgr{color:var(--green);} .vpu{color:var(--purple);}
 
-        /* Request log strip */
-        .request-log-header {
-          display:flex; align-items:center; justify-content:space-between;
-          margin-bottom:12px;
+        .env-ports { display:flex; flex-direction:column; gap:9px; }
+        .epr {
+          display:flex; align-items:center; gap:10px; padding:11px 13px;
+          background:var(--surface2); border:1px solid var(--border); border-radius:8px;
         }
-        .sec-label {
-          font-family:var(--mono); font-size:.65rem;
-          letter-spacing:.12em; text-transform:uppercase;
-          color: var(--orange);
-        }
-        .clear-btn {
-          background:none; border: 1px solid var(--border);
-          color:var(--muted2); font-family:var(--mono); font-size:.65rem;
-          border-radius:6px; padding:3px 10px; cursor:pointer;
-          transition: all .15s;
-        }
-        .clear-btn:hover { border-color:var(--border2); color:var(--text); }
+        .edot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        .ename { font-family:var(--mono); font-size:.7rem; font-weight:600; flex:1; }
+        .eport { font-family:var(--mono); font-size:.66rem; color:var(--muted); }
+        .estat { font-family:var(--mono); font-size:.58rem; font-weight:600; padding:2px 8px; border-radius:4px; }
 
-        #log-strip {
-          display:flex; flex-direction:column; gap:6px;
-          min-height:42px;
+        /* ── API PLAYGROUND ───────────────────────────────────────── */
+        #playground { background:var(--bg); }
+        .env-sw { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+        .etab {
+          display:flex; align-items:center; gap:8px; padding:10px 18px;
+          border-radius:10px; border:1px solid var(--border); background:var(--surface);
+          font-family:var(--mono); font-size:.74rem; font-weight:600;
+          cursor:pointer; transition:all .2s; color:var(--muted2);
         }
-        .log-entry {
-          display:flex; align-items:center; gap:10px;
-          padding:8px 14px;
-          background:var(--surface);
-          border:1px solid var(--border);
-          border-radius:8px;
-          animation: slideIn .25s ease both;
-          font-family:var(--mono); font-size:.72rem;
-        }
-        @keyframes slideIn {
-          from{opacity:0; transform:translateY(-6px)}
-          to{opacity:1; transform:translateY(0)}
-        }
-        .log-method {
-          padding: 2px 7px; border-radius:4px; font-weight:600; font-size:.65rem;
-        }
-        .log-method.GET  { background:rgba(59,130,246,.15); color:#60a5fa; }
-        .log-method.POST { background:rgba(16,185,129,.12); color:#34d399; }
-        .log-path { color: var(--text); flex:1; }
-        .log-status { padding:2px 8px; border-radius:4px; font-weight:600; font-size:.65rem; }
-        .log-status.ok  { background:rgba(16,185,129,.15); color:var(--green); }
-        .log-status.err { background:rgba(239,68,68,.15);  color:var(--red); }
-        .log-status.pending { background:rgba(249,115,22,.1); color:var(--orange); }
-        .log-time { color:var(--muted); font-size:.62rem; }
-        .log-ms   { color:var(--muted2); font-size:.62rem; margin-left:auto; }
-        .log-empty { color:var(--muted); font-family:var(--mono); font-size:.72rem; padding:10px 0; text-align:center; }
+        .etab:hover { border-color:var(--border2); color:var(--text); }
+        .etab.ap { border-color:rgba(34,197,94,.45);  background:rgba(34,197,94,.07);  color:var(--green);  }
+        .etab.ad { border-color:rgba(56,189,248,.45); background:rgba(56,189,248,.07); color:var(--blue);   }
+        .etab.au { border-color:rgba(251,191,36,.45); background:rgba(251,191,36,.07); color:var(--yellow); }
+        .etdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:currentColor; }
+        .etab.ap .etdot,.etab.ad .etdot,.etab.au .etdot { animation:blink 2s infinite; box-shadow:0 0 5px currentColor; }
 
-        /* ── API CARDS ── */
-        .cards { display:flex; flex-direction:column; gap:20px; }
-
-        .api-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius);
-          overflow:hidden;
-          transition: border-color .2s;
+        .eib {
+          display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+          padding:11px 16px; background:var(--surface); border:1px solid var(--border);
+          border-radius:10px; font-family:var(--mono); font-size:.7rem; margin-bottom:24px;
         }
-        .api-card:hover { border-color: var(--border2); }
-
-        .api-card-head {
-          display:flex; align-items:center; gap:12px;
-          padding: 14px 20px;
-          border-bottom: 1px solid var(--border);
-          cursor:pointer;
-          user-select:none;
+        .eib-lbl { color:var(--muted); flex-shrink:0; }
+        .eib-url { color:var(--orange); font-weight:500; flex:1; word-break:break-all; }
+        .cpill {
+          display:flex; align-items:center; gap:5px; padding:3px 10px;
+          border-radius:100px; font-size:.6rem; font-weight:600; flex-shrink:0;
         }
-        .badge {
-          font-family:var(--mono); font-size:.68rem; font-weight:600;
-          padding: 3px 9px; border-radius:5px; flex-shrink:0;
-        }
-        .badge.GET  { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
-        .badge.POST { background:rgba(16,185,129,.12); color:#34d399; border:1px solid rgba(16,185,129,.3); }
+        .cpill.chk { background:rgba(100,116,139,.13); color:var(--muted2); }
+        .cpill.on  { background:rgba(34,197,94,.1); color:var(--green); }
+        .cpill.off { background:rgba(248,113,113,.1); color:var(--red); }
+        .cpdot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .cpill.on .cpdot { animation:blink 2s infinite; }
 
-        .api-path {
-          font-family:var(--mono); font-size:.82rem; color:var(--text); flex:1;
+        /* Log panel */
+        .log-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:24px; }
+        .log-head { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; border-bottom:1px solid var(--border); background:var(--surface2); }
+        .log-ttl { font-family:var(--mono); font-size:.63rem; color:var(--orange); letter-spacing:.1em; text-transform:uppercase; }
+        .log-clr { background:none; border:1px solid var(--border); color:var(--muted); font-family:var(--mono); font-size:.6rem; padding:3px 10px; border-radius:6px; cursor:pointer; transition:all .15s; }
+        .log-clr:hover { border-color:var(--border2); color:var(--text); }
+        .log-bdy { padding:10px; display:flex; flex-direction:column; gap:5px; min-height:50px; }
+        .log-row {
+          display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+          padding:6px 10px; background:var(--surface2); border:1px solid var(--border);
+          border-radius:7px; font-family:var(--mono); font-size:.66rem;
+          animation:fadeIn .2s ease both;
         }
-        .api-path .param { color:var(--orange); }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+        .lm { padding:1px 6px; border-radius:4px; font-weight:600; font-size:.6rem; flex-shrink:0; }
+        .lm.GET  { background:rgba(56,189,248,.13); color:#7dd3fc; }
+        .lm.POST { background:rgba(34,197,94,.1);   color:#86efac; }
+        .lpath { color:var(--text); flex:1; word-break:break-all; min-width:60px; }
+        .lst { padding:1px 7px; border-radius:4px; font-weight:600; font-size:.6rem; flex-shrink:0; }
+        .lst.ok  { background:rgba(34,197,94,.13); color:var(--green); }
+        .lst.err { background:rgba(248,113,113,.13); color:var(--red); }
+        .lst.pnd { background:rgba(249,115,22,.1);  color:var(--orange); }
+        .ltime { color:var(--muted); font-size:.58rem; flex-shrink:0; }
+        .lms   { color:var(--muted); font-size:.58rem; margin-left:auto; flex-shrink:0; }
+        .log-empty { text-align:center; color:var(--muted); font-family:var(--mono); font-size:.68rem; padding:14px 0; }
+        .spin { display:inline-block; width:9px; height:9px; border:2px solid var(--border2); border-top-color:var(--orange); border-radius:50%; animation:rot .5s linear infinite; }
+        @keyframes rot { to{transform:rotate(360deg)} }
 
-        .api-desc { font-size:.75rem; color:var(--muted2); }
-
-        .chevron {
-          color:var(--muted); font-size:.7rem;
-          transition: transform .2s;
-        }
-        .api-card.open .chevron { transform: rotate(180deg); }
-
-        .api-card-body {
-          padding:20px;
-          display:none;
-          flex-direction:column; gap:14px;
-          border-top: 1px solid var(--border);
-        }
-        .api-card.open .api-card-body { display:flex; }
-
-        .field-label {
-          font-family:var(--mono); font-size:.63rem;
-          color:var(--muted); letter-spacing:.1em; text-transform:uppercase;
-          margin-bottom:6px;
-        }
-        .input-field {
-          width:100%;
-          background:var(--bg); border:1px solid var(--border);
-          border-radius:8px; padding:10px 14px;
-          color:var(--text); font-family:var(--mono); font-size:.8rem;
+        /* API cards */
+        .api-cards { display:flex; flex-direction:column; gap:12px; }
+        .api-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; transition:border-color .2s; }
+        .api-card:hover,.api-card.open { border-color:var(--border2); }
+        .ac-head { display:flex; align-items:center; gap:10px; padding:13px 16px; cursor:pointer; user-select:none; transition:background .15s; }
+        .ac-head:hover { background:rgba(255,255,255,.015); }
+        .meth { font-family:var(--mono); font-size:.64rem; font-weight:700; padding:3px 9px; border-radius:5px; flex-shrink:0; }
+        .meth.GET  { background:rgba(56,189,248,.12); color:#7dd3fc; border:1px solid rgba(56,189,248,.22); }
+        .meth.POST { background:rgba(34,197,94,.1); color:#86efac; border:1px solid rgba(34,197,94,.22); }
+        .ac-path { font-family:var(--mono); font-size:.78rem; color:var(--text); flex:1; word-break:break-all; }
+        .ac-path .param { color:var(--orange); }
+        .ac-dsc { font-size:.7rem; color:var(--muted); }
+        .ac-chev { color:var(--muted); font-size:.66rem; flex-shrink:0; transition:transform .25s; }
+        .api-card.open .ac-chev { transform:rotate(180deg); }
+        .ac-body { display:none; padding:16px; flex-direction:column; gap:13px; border-top:1px solid var(--border); }
+        .api-card.open .ac-body { display:flex; }
+        .flbl { font-family:var(--mono); font-size:.58rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
+        .inp {
+          width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+          padding:9px 13px; color:var(--text); font-family:var(--mono); font-size:.76rem;
           outline:none; transition:border-color .2s;
         }
-        .input-field:focus { border-color:var(--orange); }
-        .input-field::placeholder { color:var(--muted); }
-        textarea.input-field { resize:vertical; min-height:80px; line-height:1.6; }
-
-        .send-row { display:flex; align-items:center; gap:10px; }
+        .inp:focus { border-color:var(--orange); }
+        .inp::placeholder { color:var(--muted); }
+        textarea.inp { resize:vertical; min-height:76px; line-height:1.6; }
+        .curl-box {
+          background:var(--bg); border:1px solid var(--border); border-radius:8px;
+          padding:9px 13px; font-family:var(--mono); font-size:.68rem;
+          color:var(--muted); line-height:1.6; word-break:break-all; overflow-x:auto;
+        }
+        .curl-box .cmd{color:var(--yellow);} .curl-box .url{color:var(--blue);} .curl-box .fl{color:var(--muted);}
         .send-btn {
-          display:flex; align-items:center; gap:7px;
-          background:var(--orange); color:#fff;
-          border:none; border-radius:8px;
-          padding:9px 18px; font-family:var(--mono); font-size:.75rem; font-weight:600;
-          cursor:pointer; transition: background .15s, transform .1s;
+          display:inline-flex; align-items:center; gap:7px;
+          background:var(--orange); color:#fff; border:none; border-radius:8px;
+          padding:10px 20px; font-family:var(--mono); font-size:.74rem; font-weight:600;
+          cursor:pointer; transition:background .15s, transform .1s; touch-action:manipulation;
         }
         .send-btn:hover { background:#ea6c0a; }
         .send-btn:active { transform:scale(.97); }
-        .send-btn.blue { background:var(--blue); }
-        .send-btn.blue:hover { background:#2563eb; }
-        .send-btn .arrow { font-size:.85rem; }
-
-        .curl-preview {
-          background:var(--bg); border:1px solid var(--border); border-radius:8px;
-          padding:10px 14px; font-family:var(--mono); font-size:.72rem;
-          color:var(--muted2); line-height:1.6; word-break:break-all;
-        }
-        .curl-preview .cmd { color:var(--yellow); }
-        .curl-preview .url-part { color:var(--blue); }
-        .curl-preview .flag { color:var(--muted); }
-
-        /* Response viewer */
-        .res-wrapper { display:none; flex-direction:column; gap:8px; }
-        .res-wrapper.visible { display:flex; }
-
-        .res-meta {
-          display:flex; align-items:center; gap:10px;
-          font-family:var(--mono); font-size:.68rem;
-        }
-        .res-status { padding:3px 9px; border-radius:5px; font-weight:600; }
-        .res-status.ok  { background:rgba(16,185,129,.15); color:var(--green); }
-        .res-status.err { background:rgba(239,68,68,.15);  color:var(--red); }
-        .res-elapsed { color:var(--muted); }
-
+        .send-btn.b { background:var(--blue); }
+        .send-btn.b:hover { background:#0284c7; }
+        .res-wrap { display:none; flex-direction:column; gap:7px; }
+        .res-wrap.show { display:flex; }
+        .res-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:.64rem; }
+        .res-st { padding:3px 9px; border-radius:5px; font-weight:600; }
+        .res-st.ok  { background:rgba(34,197,94,.13); color:var(--green); }
+        .res-st.err { background:rgba(248,113,113,.13); color:var(--red); }
+        .res-el { color:var(--muted); }
         .res-body {
-          background: #06070b;
-          border:1px solid var(--border);
-          border-radius:8px;
-          padding:14px 16px;
-          font-family:var(--mono); font-size:.78rem;
-          line-height:1.8;
-          white-space: pre-wrap; word-break:break-word;
-          color: #a8d8a8;
-          max-height:220px; overflow-y:auto;
+          background:#040710; border:1px solid var(--border); border-radius:8px;
+          padding:13px; font-family:var(--mono); font-size:.74rem; line-height:1.8;
+          white-space:pre-wrap; word-break:break-word; color:#86efac;
+          max-height:200px; overflow-y:auto;
         }
         .res-body.err { color:#fca5a5; }
+        .res-body::-webkit-scrollbar{width:4px;} .res-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 
-        /* Spinner */
-        .spin {
-          display:inline-block; width:12px; height:12px;
-          border:2px solid var(--border2); border-top-color:var(--orange);
-          border-radius:50%; animation:spin .6s linear infinite;
+        /* ── FOOTER ──────────────────────────────────────────────── */
+        footer {
+          position:relative; z-index:1; background:var(--surface); border-top:1px solid var(--border);
+          padding:26px 5vw; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
         }
-        @keyframes spin { to{transform:rotate(360deg)} }
+        .f-brand { font-family:var(--mono); font-size:.7rem; color:var(--muted); }
+        .f-brand span { color:var(--orange); }
+        .f-links { display:flex; gap:18px; }
+        .f-links a { font-family:var(--mono); font-size:.66rem; color:var(--muted); text-decoration:none; transition:color .15s; }
+        .f-links a:hover { color:var(--text); }
 
-        /* ── RESPONSIVE ── */
-        @media(max-width:720px){
-          .layout { grid-template-columns:1fr; }
-          aside { display:none; }
-          .url-bar { max-width:100%; }
-          main { padding:20px; }
+        /* ── RESPONSIVE ──────────────────────────────────────────── */
+        @media(max-width:880px){
+          .hero { grid-template-columns:1fr; min-height:auto; padding:90px 5vw 60px; }
+          .term-card { width:100%; max-width:100%; }
+          @keyframes left { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:none} }
+          .infra-grid { grid-template-columns:1fr; }
+        }
+        @media(max-width:640px){
+          nav { padding:0 14px; }
+          .nav-links { display:none; }
+          section { padding:60px 14px; }
+          .pf-wrap { gap:8px; }
+          .pf-arr { display:none; }
+          .pf-step { min-width:calc(50% - 8px); }
+          .env-sw { gap:6px; }
+          .etab { padding:8px 12px; font-size:.68rem; }
+          footer { flex-direction:column; align-items:flex-start; }
         }
     </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-    <div class="logo">
-        <div class="logo-glyph">🔧</div>
-        <h1>Jenkins Demo <sub>Spring Boot REST — CI/CD POC</sub></h1>
+<!-- NAV -->
+<nav>
+    <a class="nav-brand" href="#"><div class="nav-icon">🔧</div>Jenkins&nbsp;DevOps&nbsp;POC</a>
+    <ul class="nav-links">
+        <li><a href="#pipeline">Pipeline</a></li>
+        <li><a href="#monitoring">Monitoring</a></li>
+        <li><a href="#infra">Infrastructure</a></li>
+        <li><a href="#playground">API Playground</a></li>
+    </ul>
+    <div class="nav-badge"><div class="ndot"></div>Build&nbsp;#47&nbsp;·&nbsp;Deployed</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <div>
+        <div class="hero-eyebrow">CI/CD Automation with Jenkins</div>
+        <h1 class="hero-title">Spring Boot on<br/><span class="ac">AWS EC2</span><br/><span class="dm">— fully automated.</span></h1>
+        <p class="hero-desc">Code pushed to GitHub triggers a Jenkins pipeline that builds, tests, and deploys a Spring Boot REST API to EC2 — with full observability via Prometheus &amp; Grafana.</p>
+        <div class="hero-pills">
+            <span class="pill p-or">🔧 Jenkins</span>
+            <span class="pill p-bl">☕ Spring Boot 3.2</span>
+            <span class="pill p-gr">☁️ AWS EC2</span>
+            <span class="pill p-pu">📊 Grafana</span>
+            <span class="pill p-ye">🔥 Prometheus</span>
+        </div>
+        <div class="hero-btns">
+            <a class="btn-pr" href="#pipeline">Explore Pipeline ↓</a>
+            <a class="btn-se" href="#playground">Test Live APIs →</a>
+        </div>
     </div>
 
-    <div class="url-bar">
-        <span class="conn-dot" id="conn-dot"></span>
-        <label>BASE&nbsp;URL&nbsp;→</label>
-        <input type="text" id="base-url-input" placeholder="http://localhost:8081" spellcheck="false"/>
-        <button id="save-url-btn" onclick="saveBaseUrl()">Apply</button>
+    <div class="term-card">
+        <div class="term-bar">
+            <div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div>
+            <span class="term-ttl">jenkins@ec2 — pipeline log</span>
+        </div>
+        <div class="term-body">
+            <div class="tl"><span class="tp">$</span><span class="tc">git push origin main</span></div>
+            <div class="tl"><span class="to">Webhook → Jenkins triggered ✓</span></div>
+            <div class="tl" style="margin-top:4px"><span class="tp">$</span><span class="tc">mvn clean package</span></div>
+            <div class="tl"><span class="to tok">BUILD SUCCESS [14s] ✓</span></div>
+            <div class="tl" style="margin-top:4px"><span class="tp">$</span><span class="tc">mvn test</span></div>
+            <div class="tl"><span class="to tok">Tests run: 12, Failures: 0 ✓</span></div>
+            <div class="tl" style="margin-top:4px"><span class="tp">$</span><span class="tc">ssh ec2 "nohup java -jar app.jar &"</span></div>
+            <div class="tl"><span class="to tok">App started on :8081 ✓</span></div>
+            <div class="tl" style="margin-top:4px"><span class="tp">$</span><span class="tc">curl localhost:8081/api/ping</span></div>
+            <div class="tl"><span class="to tor">{"status":"UP","build":"#47"}</span></div>
+            <div class="tl" style="margin-top:4px"><span class="tp">$</span><span class="tc"><span class="tcursor"></span></span></div>
+        </div>
     </div>
-</header>
-
-<div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside>
-
-        <!-- Pipeline -->
-        <div class="sidebar-section">
-            <div class="sidebar-label">Jenkins Pipeline</div>
-            <div class="pipeline">
-                <div class="stage done">
-                    <div class="stage-bubble">✓</div>
-                    <div class="stage-info">
-                        <div class="stage-name">Checkout</div>
-                        <div class="stage-sub">git clone / SCM</div>
-                    </div>
-                    <div class="stage-time">2s</div>
-                </div>
-                <div class="stage done">
-                    <div class="stage-bubble">✓</div>
-                    <div class="stage-info">
-                        <div class="stage-name">Build</div>
-                        <div class="stage-sub">mvn package</div>
-                    </div>
-                    <div class="stage-time">14s</div>
-                </div>
-                <div class="stage done">
-                    <div class="stage-bubble">✓</div>
-                    <div class="stage-info">
-                        <div class="stage-name">Test</div>
-                        <div class="stage-sub">mvn test</div>
-                    </div>
-                    <div class="stage-time">8s</div>
-                </div>
-                <div class="stage active">
-                    <div class="stage-bubble">▶</div>
-                    <div class="stage-info">
-                        <div class="stage-name">Deploy</div>
-                        <div class="stage-sub">SSH + nohup JAR</div>
-                    </div>
-                    <div class="stage-time">…</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- App info -->
-        <div class="sidebar-section">
-            <div class="sidebar-label">Stack Info</div>
-            <div class="info-list">
-                <div class="info-row"><span class="k">Framework</span><span class="v accent">Spring Boot 3.2.4</span></div>
-                <div class="info-row"><span class="k">Java</span><span class="v blue">OpenJDK 17</span></div>
-                <div class="info-row"><span class="k">Build Tool</span><span class="v">Maven 3.9</span></div>
-                <div class="info-row"><span class="k">Pipeline</span><span class="v">Declarative</span></div>
-                <div class="info-row"><span class="k">Deploy</span><span class="v">SSH + nohup</span></div>
-                <div class="info-row"><span class="k">Served on</span><span class="v accent" id="sidebar-port">—</span></div>
-            </div>
-        </div>
-
-    </aside>
-
-    <!-- MAIN -->
-    <main>
-
-        <!-- Request log -->
-        <section>
-            <div class="request-log-header">
-                <span class="sec-label">// Request Log</span>
-                <button class="clear-btn" onclick="clearLog()">Clear</button>
-            </div>
-            <div id="log-strip">
-                <div class="log-empty" id="log-empty">No requests yet — send one below ↓</div>
-            </div>
-        </section>
-
-        <!-- API Cards -->
-        <section>
-            <div class="sec-label" style="margin-bottom:16px">// API Endpoints</div>
-            <div class="cards">
-
-                <!-- PING -->
-                <div class="api-card open" id="card-ping">
-                    <div class="api-card-head" onclick="toggleCard('card-ping')">
-                        <span class="badge GET">GET</span>
-                        <span class="api-path">/api/ping</span>
-                        <span class="api-desc">Health check</span>
-                        <span class="chevron">▾</span>
-                    </div>
-                    <div class="api-card-body">
-                        <div>
-                            <div class="field-label">cURL Preview</div>
-                            <div class="curl-preview" id="curl-ping">
-                                <span class="cmd">curl</span> <span class="flag">-X GET</span> <span class="url-part" id="curl-ping-url"></span>
-                            </div>
-                        </div>
-                        <div class="send-row">
-                            <button class="send-btn" onclick="callPing()">
-                                <span class="arrow">→</span> Send Request
-                            </button>
-                        </div>
-                        <div class="res-wrapper" id="res-ping-wrap">
-                            <div class="res-meta">
-                                <span class="res-status" id="res-ping-status"></span>
-                                <span class="res-elapsed" id="res-ping-ms"></span>
-                            </div>
-                            <pre class="res-body" id="res-ping-body"></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- GREET -->
-                <div class="api-card" id="card-greet">
-                    <div class="api-card-head" onclick="toggleCard('card-greet')">
-                        <span class="badge GET">GET</span>
-                        <span class="api-path">/api/greet/<span class="param">{name}</span></span>
-                        <span class="api-desc">Personalised greeting</span>
-                        <span class="chevron">▾</span>
-                    </div>
-                    <div class="api-card-body">
-                        <div>
-                            <div class="field-label">Path Parameter — name</div>
-                            <input class="input-field" id="greet-name" type="text" placeholder="e.g. Jenkins" oninput="updateCurls()"/>
-                        </div>
-                        <div>
-                            <div class="field-label">cURL Preview</div>
-                            <div class="curl-preview">
-                                <span class="cmd">curl</span> <span class="flag">-X GET</span> <span class="url-part" id="curl-greet-url"></span>
-                            </div>
-                        </div>
-                        <div class="send-row">
-                            <button class="send-btn blue" onclick="callGreet()">
-                                <span class="arrow">→</span> Send Request
-                            </button>
-                        </div>
-                        <div class="res-wrapper" id="res-greet-wrap">
-                            <div class="res-meta">
-                                <span class="res-status" id="res-greet-status"></span>
-                                <span class="res-elapsed" id="res-greet-ms"></span>
-                            </div>
-                            <pre class="res-body" id="res-greet-body"></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ECHO -->
-                <div class="api-card" id="card-echo">
-                    <div class="api-card-head" onclick="toggleCard('card-echo')">
-                        <span class="badge POST">POST</span>
-                        <span class="api-path">/api/echo</span>
-                        <span class="api-desc">Echo request body</span>
-                        <span class="chevron">▾</span>
-                    </div>
-                    <div class="api-card-body">
-                        <div>
-                            <div class="field-label">Request Body (JSON)</div>
-                            <textarea class="input-field" id="echo-body" placeholder='{"message": "hello from Jenkins"}'></textarea>
-                        </div>
-                        <div>
-                            <div class="field-label">cURL Preview</div>
-                            <div class="curl-preview">
-                                <span class="cmd">curl</span> <span class="flag">-X POST</span>
-                                <span class="url-part" id="curl-echo-url"></span>
-                                <span class="flag"> -H "Content-Type: application/json"</span>
-                                <span class="flag"> -d '</span><span id="curl-echo-body">{"message":"hello"}</span><span class="flag">'</span>
-                            </div>
-                        </div>
-                        <div class="send-row">
-                            <button class="send-btn" onclick="callEcho()">
-                                <span class="arrow">→</span> Send Request
-                            </button>
-                        </div>
-                        <div class="res-wrapper" id="res-echo-wrap">
-                            <div class="res-meta">
-                                <span class="res-status" id="res-echo-status"></span>
-                                <span class="res-elapsed" id="res-echo-ms"></span>
-                            </div>
-                            <pre class="res-body" id="res-echo-body"></pre>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-    </main>
 </div>
 
+<!-- PIPELINE -->
+<section id="pipeline">
+    <div class="stag">// CI/CD Flow</div>
+    <h2 class="stit">Jenkins Pipeline Stages</h2>
+    <p class="ssub">Every push to main triggers a Jenkins declarative pipeline. All stages run automatically — zero manual intervention from commit to live.</p>
+
+    <div class="pf-wrap">
+        <div class="pf-step done">
+            <div class="pf-ico">📥</div>
+            <div class="pf-name">Checkout</div>
+            <div class="pf-cmd">git clone / SCM</div>
+            <div class="pf-bge">✓ 2s</div>
+        </div>
+        <div class="pf-arr">→</div>
+        <div class="pf-step done">
+            <div class="pf-ico">🔨</div>
+            <div class="pf-name">Build</div>
+            <div class="pf-cmd">mvn clean package</div>
+            <div class="pf-bge">✓ 14s</div>
+        </div>
+        <div class="pf-arr">→</div>
+        <div class="pf-step done">
+            <div class="pf-ico">🧪</div>
+            <div class="pf-name">Test</div>
+            <div class="pf-cmd">mvn test · 12 cases</div>
+            <div class="pf-bge">✓ 8s</div>
+        </div>
+        <div class="pf-arr">→</div>
+        <div class="pf-step active">
+            <div class="pf-ico">🚀</div>
+            <div class="pf-name">Deploy</div>
+            <div class="pf-cmd">SSH + nohup JAR</div>
+            <div class="pf-bge">▶ Running</div>
+        </div>
+        <div class="pf-arr">→</div>
+        <div class="pf-step done">
+            <div class="pf-ico">✅</div>
+            <div class="pf-name">Verify</div>
+            <div class="pf-cmd">Health /api/ping</div>
+            <div class="pf-bge">✓ 1s</div>
+        </div>
+    </div>
+
+    <div class="pd-grid">
+        <div class="pd-card">
+            <div class="pd-head"><div class="pd-ico" style="background:rgba(249,115,22,.1)">🗒️</div><div><div class="pd-ttl">Jenkinsfile</div><div class="pd-sub">Declarative pipeline</div></div></div>
+            <ul class="pd-list">
+                <li>Declarative syntax with stages{} block</li>
+                <li>GitHub webhook triggers on push to main</li>
+                <li>Environment variables for EC2 host/user</li>
+                <li>SSH credentials stored in Jenkins vault</li>
+            </ul>
+        </div>
+        <div class="pd-card">
+            <div class="pd-head"><div class="pd-ico" style="background:rgba(56,189,248,.1)">☕</div><div><div class="pd-ttl">Build &amp; Test</div><div class="pd-sub">Maven 3.9 + JDK 17</div></div></div>
+            <ul class="pd-list">
+                <li>mvn clean package generates fat JAR</li>
+                <li>JUnit 5 unit &amp; integration tests</li>
+                <li>Test reports archived as Jenkins artifacts</li>
+                <li>Failure stops pipeline immediately</li>
+            </ul>
+        </div>
+        <div class="pd-card">
+            <div class="pd-head"><div class="pd-ico" style="background:rgba(34,197,94,.1)">🚀</div><div><div class="pd-ttl">Deploy Stage</div><div class="pd-sub">SSH + nohup</div></div></div>
+            <ul class="pd-list">
+                <li>SCP copies JAR to EC2 /opt/app/</li>
+                <li>Kills existing process by PID file</li>
+                <li>Starts new instance with nohup in background</li>
+                <li>Health check confirms app is live on port</li>
+            </ul>
+        </div>
+        <div class="pd-card">
+            <div class="pd-head"><div class="pd-ico" style="background:rgba(167,139,250,.1)">🔔</div><div><div class="pd-ttl">Notifications</div><div class="pd-sub">Post pipeline hooks</div></div></div>
+            <ul class="pd-list">
+                <li>post { always, success, failure } blocks</li>
+                <li>Build status reported back to GitHub</li>
+                <li>Console log tailing for debug</li>
+                <li>Workspace cleanup on completion</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- MONITORING -->
+<section id="monitoring">
+    <div class="stag">// Observability Stack</div>
+    <h2 class="stit">Monitoring with Prometheus &amp; Grafana</h2>
+    <p class="ssub">Full observability from system metrics to application health — Node Exporter, Prometheus, and Grafana all running on the same EC2 instance.</p>
+
+    <div class="mon-grid">
+        <div class="mon-card">
+            <div class="mon-ico" style="background:rgba(249,115,22,.1)">📡</div>
+            <div class="mon-ttl">Node Exporter</div>
+            <div class="mon-dsc">Exposes EC2 system metrics — CPU, memory, disk I/O, network — on port 9100 for Prometheus to scrape every 15 seconds.</div>
+        </div>
+        <div class="mon-card">
+            <div class="mon-ico" style="background:rgba(251,191,36,.1)">🔥</div>
+            <div class="mon-ttl">Prometheus</div>
+            <div class="mon-dsc">Scrapes Node Exporter + Spring Actuator metrics. Stores time-series data, evaluates alert rules, serves on port 9090.</div>
+        </div>
+        <div class="mon-card">
+            <div class="mon-ico" style="background:rgba(167,139,250,.1)">📊</div>
+            <div class="mon-ttl">Grafana</div>
+            <div class="mon-dsc">Dashboards for JVM heap, HTTP request rate, error rate, and host system health. Pre-built Spring Boot + Node panels on :3000.</div>
+        </div>
+        <div class="mon-card">
+            <div class="mon-ico" style="background:rgba(56,189,248,.1)">💓</div>
+            <div class="mon-ttl">Spring Actuator</div>
+            <div class="mon-dsc">Exposes /actuator/prometheus endpoint. JVM, HTTP, DB pool, and custom app metrics scraped directly by Prometheus.</div>
+        </div>
+    </div>
+
+    <div class="mon-flow">
+        <div class="mfs"><div class="mfs-ico" style="background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.22)">💻</div><div class="mfs-lbl">EC2 Host</div><div class="mfs-prt">:9100</div></div>
+        <div class="marr">→</div>
+        <div class="mfs"><div class="mfs-ico" style="background:rgba(56,189,248,.07);border-color:rgba(56,189,248,.22)">☕</div><div class="mfs-lbl">Spring Boot</div><div class="mfs-prt">:8081/actuator</div></div>
+        <div class="marr">→</div>
+        <div class="mfs"><div class="mfs-ico" style="background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.22)">🔥</div><div class="mfs-lbl">Prometheus</div><div class="mfs-prt">:9090 scrapes</div></div>
+        <div class="marr">→</div>
+        <div class="mfs"><div class="mfs-ico" style="background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.22)">📊</div><div class="mfs-lbl">Grafana</div><div class="mfs-prt">:3000 dashboards</div></div>
+    </div>
+</section>
+
+<!-- INFRASTRUCTURE -->
+<section id="infra">
+    <div class="stag">// Deployment Target</div>
+    <h2 class="stit">AWS EC2 Infrastructure</h2>
+    <p class="ssub">A single EC2 instance hosts all services. Jenkins deploys directly over SSH using stored credentials — clean JAR deployment, no containers required.</p>
+
+    <div class="infra-grid">
+        <div class="infra-card">
+            <div class="infra-ttl">☁️ EC2 Instance</div>
+            <div class="infra-sub">Deployment target for all environments</div>
+            <div class="ikv">
+                <div class="ikv-row"><span class="k">OS</span><span class="v vbl">Ubuntu 22.04 LTS</span></div>
+                <div class="ikv-row"><span class="k">Instance Type</span><span class="v vor">t2.micro / t3.small</span></div>
+                <div class="ikv-row"><span class="k">Java Runtime</span><span class="v vbl">OpenJDK 17</span></div>
+                <div class="ikv-row"><span class="k">Deploy Method</span><span class="v vgr">SSH + nohup JAR</span></div>
+                <div class="ikv-row"><span class="k">Jenkins Access</span><span class="v vor">SSH Credential Plugin</span></div>
+                <div class="ikv-row"><span class="k">Security Group</span><span class="v">8081–8083, 9090, 3000</span></div>
+            </div>
+        </div>
+        <div class="infra-card">
+            <div class="infra-ttl">🌐 Environment Ports</div>
+            <div class="infra-sub">Three isolated environments on the same host</div>
+            <div class="env-ports">
+                <div class="epr">
+                    <div class="edot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+                    <div><div class="ename" style="color:var(--green)">Production</div><div style="font-family:var(--mono);font-size:.58rem;color:var(--muted)">Stable release branch</div></div>
+                    <div class="eport">:8081</div>
+                    <div class="estat" style="background:rgba(34,197,94,.1);color:var(--green)">LIVE</div>
+                </div>
+                <div class="epr">
+                    <div class="edot" style="background:var(--blue);box-shadow:0 0 6px var(--blue)"></div>
+                    <div><div class="ename" style="color:var(--blue)">Develop</div><div style="font-family:var(--mono);font-size:.58rem;color:var(--muted)">Feature integration branch</div></div>
+                    <div class="eport">:8082</div>
+                    <div class="estat" style="background:rgba(56,189,248,.1);color:var(--blue)">DEV</div>
+                </div>
+                <div class="epr">
+                    <div class="edot" style="background:var(--yellow);box-shadow:0 0 6px var(--yellow)"></div>
+                    <div><div class="ename" style="color:var(--yellow)">UAT</div><div style="font-family:var(--mono);font-size:.58rem;color:var(--muted)">User acceptance testing</div></div>
+                    <div class="eport">:8083</div>
+                    <div class="estat" style="background:rgba(251,191,36,.1);color:var(--yellow)">UAT</div>
+                </div>
+                <div class="epr" style="border-color:rgba(167,139,250,.18);margin-top:4px">
+                    <div class="edot" style="background:var(--purple)"></div>
+                    <div class="ename" style="color:var(--muted2)">Prometheus</div>
+                    <div class="eport">:9090</div>
+                    <div class="estat" style="background:rgba(167,139,250,.1);color:var(--purple)">MON</div>
+                </div>
+                <div class="epr" style="border-color:rgba(167,139,250,.18)">
+                    <div class="edot" style="background:var(--purple)"></div>
+                    <div class="ename" style="color:var(--muted2)">Grafana</div>
+                    <div class="eport">:3000</div>
+                    <div class="estat" style="background:rgba(167,139,250,.1);color:var(--purple)">MON</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- API PLAYGROUND -->
+<section id="playground">
+    <div class="stag">// Live API Testing</div>
+    <h2 class="stit">API Playground</h2>
+    <p class="ssub">Select an environment and fire requests directly at your running Spring Boot app. Switch between Production, Develop, and UAT instantly.</p>
+
+    <div class="env-sw">
+        <button class="etab ap" id="tab-prod" onclick="switchEnv('prod')">
+            <span class="etdot"></span> Production <span style="font-family:var(--mono);font-size:.62rem;opacity:.65">:8081</span>
+        </button>
+        <button class="etab" id="tab-dev" onclick="switchEnv('dev')">
+            <span class="etdot" style="background:var(--blue)"></span> Develop <span style="font-family:var(--mono);font-size:.62rem;opacity:.65">:8082</span>
+        </button>
+        <button class="etab" id="tab-uat" onclick="switchEnv('uat')">
+            <span class="etdot" style="background:var(--yellow)"></span> UAT <span style="font-family:var(--mono);font-size:.62rem;opacity:.65">:8083</span>
+        </button>
+    </div>
+
+    <div class="eib">
+        <span class="eib-lbl">Base URL</span>
+        <span class="eib-url" id="eib-url">http://13.235.18.48:8081</span>
+        <div class="cpill chk" id="cpill"><div class="cpdot"></div> Checking…</div>
+    </div>
+
+    <div class="log-panel">
+        <div class="log-head">
+            <span class="log-ttl">// Request Log</span>
+            <button class="log-clr" onclick="clearLog()">Clear</button>
+        </div>
+        <div class="log-bdy" id="log-strip">
+            <div class="log-empty" id="log-empty">No requests yet — send one below ↓</div>
+        </div>
+    </div>
+
+    <div class="api-cards">
+
+        <!-- PING -->
+        <div class="api-card open" id="card-ping">
+            <div class="ac-head" onclick="toggleCard('card-ping')">
+                <span class="meth GET">GET</span>
+                <span class="ac-path">/api/ping</span>
+                <span class="ac-dsc">Health check</span>
+                <span class="ac-chev">▾</span>
+            </div>
+            <div class="ac-body">
+                <div>
+                    <div class="flbl">cURL Preview</div>
+                    <div class="curl-box"><span class="cmd">curl</span> <span class="fl">-X GET</span> <span class="url" id="curl-ping-url"></span></div>
+                </div>
+                <div><button class="send-btn" onclick="callPing()">→ Send Request</button></div>
+                <div class="res-wrap" id="res-ping-wrap">
+                    <div class="res-meta"><span class="res-st" id="res-ping-st"></span><span class="res-el" id="res-ping-ms"></span></div>
+                    <pre class="res-body" id="res-ping-body"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- GREET -->
+        <div class="api-card" id="card-greet">
+            <div class="ac-head" onclick="toggleCard('card-greet')">
+                <span class="meth GET">GET</span>
+                <span class="ac-path">/api/greet/<span class="param">{name}</span></span>
+                <span class="ac-dsc">Personalised greeting</span>
+                <span class="ac-chev">▾</span>
+            </div>
+            <div class="ac-body">
+                <div>
+                    <div class="flbl">Path Parameter — name</div>
+                    <input class="inp" id="greet-name" type="text" placeholder="e.g. Jenkins" oninput="updateCurls()"/>
+                </div>
+                <div>
+                    <div class="flbl">cURL Preview</div>
+                    <div class="curl-box"><span class="cmd">curl</span> <span class="fl">-X GET</span> <span class="url" id="curl-greet-url"></span></div>
+                </div>
+                <div><button class="send-btn b" onclick="callGreet()">→ Send Request</button></div>
+                <div class="res-wrap" id="res-greet-wrap">
+                    <div class="res-meta"><span class="res-st" id="res-greet-st"></span><span class="res-el" id="res-greet-ms"></span></div>
+                    <pre class="res-body" id="res-greet-body"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ECHO -->
+        <div class="api-card" id="card-echo">
+            <div class="ac-head" onclick="toggleCard('card-echo')">
+                <span class="meth POST">POST</span>
+                <span class="ac-path">/api/echo</span>
+                <span class="ac-dsc">Echo request body</span>
+                <span class="ac-chev">▾</span>
+            </div>
+            <div class="ac-body">
+                <div>
+                    <div class="flbl">Request Body (JSON)</div>
+                    <textarea class="inp" id="echo-body" placeholder='{"message": "hello from Jenkins"}' oninput="updateCurls()"></textarea>
+                </div>
+                <div>
+                    <div class="flbl">cURL Preview</div>
+                    <div class="curl-box">
+                        <span class="cmd">curl</span> <span class="fl">-X POST</span>
+                        <span class="url" id="curl-echo-url"></span>
+                        <span class="fl"> -H "Content-Type: application/json"</span>
+                        <span class="fl"> -d '</span><span id="curl-echo-body">{"message":"hello"}</span><span class="fl">'</span>
+                    </div>
+                </div>
+                <div><button class="send-btn" onclick="callEcho()">→ Send Request</button></div>
+                <div class="res-wrap" id="res-echo-wrap">
+                    <div class="res-meta"><span class="res-st" id="res-echo-st"></span><span class="res-el" id="res-echo-ms"></span></div>
+                    <pre class="res-body" id="res-echo-body"></pre>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="f-brand">🔧 <span>Jenkins CI/CD POC</span> — Spring Boot · AWS EC2 · Prometheus · Grafana</div>
+    <div class="f-links">
+        <a href="#pipeline">Pipeline</a>
+        <a href="#monitoring">Monitoring</a>
+        <a href="#infra">Infrastructure</a>
+        <a href="#playground">API Test</a>
+    </div>
+</footer>
+
 <script>
-    // ── Base URL Logic ─────────────────────────────────────────────────────────
-    // Auto-detect: if this page is served by the Spring Boot app,
-    // window.location.origin IS the correct base. Otherwise fall back to the
-    // stored value or the default.
+    // ── Environment config ─────────────────────────────────────
+    const ENVS = {
+      prod: { port: 8081, host: '13.235.18.48' },
+      dev:  { port: 8082, host: '13.235.18.48' },
+      uat:  { port: 8083, host: '13.235.18.48' },
+    };
+    let currentEnv = 'prod';
+    let BASE = `http://${ENVS.prod.host}:${ENVS.prod.port}`;
 
-    const DEFAULT_PORT = 8081;
-
-    function getStoredBase() {
-      return localStorage.getItem('jenkins_base_url') || null;
+    function switchEnv(env) {
+      currentEnv = env;
+      BASE = `http://${ENVS[env].host}:${ENVS[env].port}`;
+      document.querySelectorAll('.etab').forEach(t => { t.className = 'etab'; });
+      const map = { prod:'ap', dev:'ad', uat:'au' };
+      document.getElementById(`tab-${env}`).className = `etab ${map[env]}`;
+      document.getElementById('eib-url').textContent = BASE;
+      updateCurls();
+      pingHealth();
     }
 
-    function resolveBase() {
-      const stored = getStoredBase();
-      if (stored) return stored;
-      // If served from the same origin (e.g. Spring Boot static resources)
-      // use that origin; otherwise guess localhost:DEFAULT_PORT
-      const origin = window.location.origin;
-      if (origin && origin !== 'null' && !origin.startsWith('file://')) {
-        return origin;
+    // ── Health probe ───────────────────────────────────────────
+    const cpill = document.getElementById('cpill');
+    async function pingHealth() {
+      cpill.className = 'cpill chk'; cpill.innerHTML = '<div class="cpdot"></div> Checking…';
+      try {
+        const r = await fetch(`${BASE}/api/ping`, { signal: AbortSignal.timeout(3000) });
+        if (r.ok) { cpill.className='cpill on'; cpill.innerHTML='<div class="cpdot"></div> Online'; }
+        else       { cpill.className='cpill off'; cpill.innerHTML=`<div class="cpdot"></div> Error ${r.status}`; }
+      } catch {
+        cpill.className='cpill off'; cpill.innerHTML='<div class="cpdot"></div> Offline';
       }
-      return `http://localhost:${DEFAULT_PORT}`;
     }
 
-    let BASE = resolveBase();
-
-    function initUI() {
-      document.getElementById('base-url-input').value = BASE;
-      document.getElementById('sidebar-port').textContent = BASE;
-      updateCurls();
-      pingHealth();
-    }
-
-    function saveBaseUrl() {
-      const val = document.getElementById('base-url-input').value.trim().replace(/\/$/, '');
-      if (!val) return;
-      BASE = val;
-      localStorage.setItem('jenkins_base_url', BASE);
-      document.getElementById('sidebar-port').textContent = BASE;
-      updateCurls();
-      const btn = document.getElementById('save-url-btn');
-      btn.textContent = '✓ Saved'; btn.className = 'saved';
-      setTimeout(() => { btn.textContent = 'Apply'; btn.className = ''; }, 1800);
-      pingHealth();
-    }
-
-    // Allow Enter key in url input
-    document.getElementById('base-url-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') saveBaseUrl();
-    });
-
-    // ── cURL previews ──────────────────────────────────────────────────────────
+    // ── cURL previews ──────────────────────────────────────────
     function updateCurls() {
       const name = encodeURIComponent(document.getElementById('greet-name')?.value.trim() || 'World');
       const echoRaw = document.getElementById('echo-body')?.value.trim() || '{"message":"hello"}';
-
       document.getElementById('curl-ping-url').textContent  = `${BASE}/api/ping`;
       document.getElementById('curl-greet-url').textContent = `${BASE}/api/greet/${name}`;
       document.getElementById('curl-echo-url').textContent  = `${BASE}/api/echo`;
-      try {
-        document.getElementById('curl-echo-body').textContent = JSON.stringify(JSON.parse(echoRaw));
-      } catch { document.getElementById('curl-echo-body').textContent = echoRaw; }
+      try { document.getElementById('curl-echo-body').textContent = JSON.stringify(JSON.parse(echoRaw)); }
+      catch { document.getElementById('curl-echo-body').textContent = echoRaw; }
     }
-
     document.getElementById('greet-name').addEventListener('input', updateCurls);
     document.getElementById('echo-body').addEventListener('input', updateCurls);
 
-    // ── Card toggle ────────────────────────────────────────────────────────────
-    function toggleCard(id) {
-      document.getElementById(id).classList.toggle('open');
-    }
+    // ── Card toggle ────────────────────────────────────────────
+    function toggleCard(id) { document.getElementById(id).classList.toggle('open'); }
 
-    // ── Request log ────────────────────────────────────────────────────────────
+    // ── Request log ────────────────────────────────────────────
     let logCount = 0;
-    function addLog(method, path, status, ms) {
-      document.getElementById('log-empty')?.remove();
-      const strip = document.getElementById('log-strip');
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-      const time = new Date().toLocaleTimeString('en-GB', { hour12:false });
-      const ok = status >= 200 && status < 300;
-      entry.innerHTML = `
-        <span class="log-method ${method}">${method}</span>
-        <span class="log-path">${path}</span>
-        <span class="log-status ${ok?'ok':'err'}">${status}</span>
-        <span class="log-time">${time}</span>
-        <span class="log-ms">${ms}ms</span>
-      `;
-      strip.insertBefore(entry, strip.firstChild);
-      logCount++;
-      if (logCount > 20) strip.lastChild?.remove();
-    }
-
     function addLogPending(method, path) {
       document.getElementById('log-empty')?.remove();
       const strip = document.getElementById('log-strip');
-      const entry = document.createElement('div');
-      entry.id = 'log-pending';
-      entry.className = 'log-entry';
-      entry.innerHTML = `
-        <span class="log-method ${method}">${method}</span>
-        <span class="log-path">${path}</span>
-        <span class="log-status pending"><span class="spin"></span></span>
-        <span class="log-time">…</span>
-      `;
-      strip.insertBefore(entry, strip.firstChild);
+      const el = document.createElement('div');
+      el.id='log-pending'; el.className='log-row';
+      el.innerHTML=`<span class="lm ${method}">${method}</span><span class="lpath">${path}</span><span class="lst pnd"><span class="spin"></span></span><span class="ltime">…</span>`;
+      strip.insertBefore(el, strip.firstChild);
     }
-
     function resolveLogPending(status, ms) {
       const el = document.getElementById('log-pending');
       if (!el) return;
       el.removeAttribute('id');
       const ok = status >= 200 && status < 300;
-      el.querySelector('.log-status').className = `log-status ${ok?'ok':'err'}`;
-      el.querySelector('.log-status').innerHTML = status;
-      el.querySelector('.log-time').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
-      const ms_el = document.createElement('span');
-      ms_el.className = 'log-ms'; ms_el.textContent = ms+'ms';
-      el.appendChild(ms_el);
-    }
-
-    function clearLog() {
+      el.querySelector('.lst').className = `lst ${ok?'ok':'err'}`;
+      el.querySelector('.lst').textContent = status;
+      el.querySelector('.ltime').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+      const msel = document.createElement('span'); msel.className='lms'; msel.textContent=ms+'ms';
+      el.appendChild(msel);
+      logCount++;
       const strip = document.getElementById('log-strip');
-      strip.innerHTML = '<div class="log-empty" id="log-empty">No requests yet — send one below ↓</div>';
-      logCount = 0;
+      if (logCount > 20) strip.lastChild?.remove();
+    }
+    function clearLog() {
+      document.getElementById('log-strip').innerHTML='<div class="log-empty" id="log-empty">No requests yet — send one below ↓</div>';
+      logCount=0;
     }
 
-    // ── Health probe ───────────────────────────────────────────────────────────
-    const dot = document.getElementById('conn-dot');
-    async function pingHealth() {
-      dot.className = 'conn-dot';
-      try {
-        const r = await fetch(`${BASE}/api/ping`, { signal: AbortSignal.timeout(3000) });
-        dot.className = r.ok ? 'conn-dot online' : 'conn-dot offline';
-      } catch { dot.className = 'conn-dot offline'; }
-    }
-
-    // ── Response renderer ──────────────────────────────────────────────────────
+    // ── Response renderer ──────────────────────────────────────
     function showResponse(prefix, ok, status, ms, data) {
-      const wrap = document.getElementById(`res-${prefix}-wrap`);
-      const statusEl = document.getElementById(`res-${prefix}-status`);
-      const msEl     = document.getElementById(`res-${prefix}-ms`);
-      const bodyEl   = document.getElementById(`res-${prefix}-body`);
-      wrap.classList.add('visible');
-      statusEl.textContent = `HTTP ${status}`;
-      statusEl.className = `res-status ${ok?'ok':'err'}`;
-      msEl.textContent = `${ms} ms`;
-      bodyEl.className = `res-body ${ok?'':'err'}`;
-      bodyEl.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      const wrap=document.getElementById(`res-${prefix}-wrap`);
+      const stEl=document.getElementById(`res-${prefix}-st`);
+      const msEl=document.getElementById(`res-${prefix}-ms`);
+      const body=document.getElementById(`res-${prefix}-body`);
+      wrap.classList.add('show');
+      stEl.textContent=`HTTP ${status}`; stEl.className=`res-st ${ok?'ok':'err'}`;
+      msEl.textContent=`${ms} ms`;
+      body.className=`res-body ${ok?'':'err'}`;
+      body.textContent=typeof data==='string'?data:JSON.stringify(data,null,2);
     }
 
-    // ── API calls ──────────────────────────────────────────────────────────────
+    // ── API calls ──────────────────────────────────────────────
     async function callPing() {
-      const path = '/api/ping';
-      addLogPending('GET', path);
-      const t = Date.now();
+      const path='/api/ping'; addLogPending('GET',path); const t=Date.now();
       try {
-        const r = await fetch(`${BASE}${path}`);
-        const ms = Date.now()-t;
-        const data = await r.json().catch(()=>'(no body)');
-        resolveLogPending(r.status, ms);
-        showResponse('ping', r.ok, r.status, ms, data);
-        dot.className = r.ok ? 'conn-dot online' : 'conn-dot offline';
+        const r=await fetch(`${BASE}${path}`); const ms=Date.now()-t;
+        const data=await r.json().catch(()=>'(no body)');
+        resolveLogPending(r.status,ms); showResponse('ping',r.ok,r.status,ms,data);
+        if(r.ok){cpill.className='cpill on';cpill.innerHTML='<div class="cpdot"></div> Online';}
       } catch(e) {
-        const ms = Date.now()-t;
-        resolveLogPending(0, ms);
-        showResponse('ping', false, 'ERR', ms, { error: e.message, hint: 'Is the app running? Check the Base URL above.' });
-        dot.className = 'conn-dot offline';
+        const ms=Date.now()-t; resolveLogPending(0,ms);
+        showResponse('ping',false,'ERR',ms,{error:e.message,hint:`Is the app running on ${BASE}?`});
+        cpill.className='cpill off'; cpill.innerHTML='<div class="cpdot"></div> Offline';
       }
     }
-
     async function callGreet() {
-      const name = document.getElementById('greet-name').value.trim() || 'World';
-      const path = `/api/greet/${encodeURIComponent(name)}`;
-      addLogPending('GET', path);
-      const t = Date.now();
+      const name=document.getElementById('greet-name').value.trim()||'World';
+      const path=`/api/greet/${encodeURIComponent(name)}`; addLogPending('GET',path); const t=Date.now();
       try {
-        const r = await fetch(`${BASE}${path}`);
-        const ms = Date.now()-t;
-        const data = await r.json().catch(()=>'(no body)');
-        resolveLogPending(r.status, ms);
-        showResponse('greet', r.ok, r.status, ms, data);
+        const r=await fetch(`${BASE}${path}`); const ms=Date.now()-t;
+        const data=await r.json().catch(()=>'(no body)');
+        resolveLogPending(r.status,ms); showResponse('greet',r.ok,r.status,ms,data);
       } catch(e) {
-        const ms = Date.now()-t;
-        resolveLogPending(0, ms);
-        showResponse('greet', false, 'ERR', ms, { error: e.message });
-        dot.className = 'conn-dot offline';
+        const ms=Date.now()-t; resolveLogPending(0,ms);
+        showResponse('greet',false,'ERR',ms,{error:e.message});
       }
     }
-
     async function callEcho() {
-      const raw = document.getElementById('echo-body').value.trim() || '{"message":"hello"}';
-      const path = '/api/echo';
-      addLogPending('POST', path);
-      const t = Date.now();
+      const raw=document.getElementById('echo-body').value.trim()||'{"message":"hello"}';
+      const path='/api/echo'; addLogPending('POST',path); const t=Date.now();
       try {
-        const body = JSON.parse(raw);
-        const r = await fetch(`${BASE}${path}`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(body)
-        });
-        const ms = Date.now()-t;
-        const data = await r.json().catch(()=>'(no body)');
-        resolveLogPending(r.status, ms);
-        showResponse('echo', r.ok, r.status, ms, data);
+        const body=JSON.parse(raw);
+        const r=await fetch(`${BASE}${path}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const ms=Date.now()-t; const data=await r.json().catch(()=>'(no body)');
+        resolveLogPending(r.status,ms); showResponse('echo',r.ok,r.status,ms,data);
       } catch(e) {
-        const ms = Date.now()-t;
-        resolveLogPending(0, ms);
-        showResponse('echo', false, 'ERR', ms, { error: e.message || 'Invalid JSON / network error' });
-        dot.className = 'conn-dot offline';
+        const ms=Date.now()-t; resolveLogPending(0,ms);
+        showResponse('echo',false,'ERR',ms,{error:e.message||'Invalid JSON or network error'});
       }
     }
 
-    // ── Boot ───────────────────────────────────────────────────────────────────
-    initUI();
+    // ── Boot ───────────────────────────────────────────────────
+    updateCurls();
+    pingHealth();
 </script>
 </body>
 </html>
