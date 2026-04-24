@@ -648,7 +648,7 @@
 
     <div class="eib">
         <span class="eib-lbl">Base URL</span>
-        <span class="eib-url" id="eib-url">http://13.235.18.48:8081</span>
+        <span class="eib-url" id="eib-url">http://…:8081</span>
         <div class="cpill chk" id="cpill"><div class="cpdot"></div> Checking…</div>
     </div>
 
@@ -756,10 +756,13 @@
 
 <script>
     // ── Environment config ─────────────────────────────────────
+    // Use the same host that served this page so CORS is never triggered.
+    // Works whether accessed via EC2 IP, localhost, or any domain.
+    const EC2_HOST = window.location.hostname;   // e.g. "13.235.18.48" or "localhost"
     const ENVS = {
-      prod: { port: 8081, host: '13.235.18.48' },
-      dev:  { port: 8082, host: '13.235.18.48' },
-      uat:  { port: 8083, host: '13.235.18.48' },
+      prod: { port: 8081, host: EC2_HOST },
+      dev:  { port: 8082, host: EC2_HOST },
+      uat:  { port: 8083, host: EC2_HOST },
     };
     let currentEnv = 'prod';
     let BASE = `http://${ENVS.prod.host}:${ENVS.prod.port}`;
@@ -887,6 +890,7 @@
     }
 
     // ── Boot ───────────────────────────────────────────────────
+    document.getElementById('eib-url').textContent = BASE; // show resolved URL immediately
     updateCurls();
     pingHealth();
 </script>
